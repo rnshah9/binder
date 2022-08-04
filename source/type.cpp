@@ -298,11 +298,14 @@ void add_relevant_include_for_decl(NamedDecl const *decl, IncludeSet &includes /
 		make_pair("<bits/types/struct_itimerspec.h>", "<time.h>"),
 
 		make_pair("<bits/pthreadtypes-arch.h>", "<pthread.h>"),
+		make_pair("<bits/pthread_stack_min-dynamic.h>", "<pthread.h>"),
 		make_pair("<bits/thread-shared-types.h>", "<pthread.h>"),
 		make_pair("<bits/struct_mutex.h>", "<pthread.h>"),
 		make_pair("<bits/struct_rwlock.h>", "<pthread.h>"),
 		make_pair("<bits/types/struct_sched_param.h>", "<pthread.h>"),
 
+		make_pair("<bits/setjmp.h>", "<csetjmp>"),
+		make_pair("<bits/types/struct___jmp_buf_tag.h>", "<csetjmp>"),
 	};
 
 	string name;
@@ -452,7 +455,7 @@ void request_bindings(clang::QualType const &qt, Context &context)
 
 
 // transform give type name to standard form
-string standard_name(string const &type)
+string standard_name_raw(string const &type)
 {
 	static vector< std::pair<string, string> > const name_map = {
 		make_pair("std::__1::",
@@ -499,8 +502,24 @@ string standard_name(string const &type)
 	return r;
 }
 
+// transform give type name to standard form
+string standard_name(string const &type)
+{
+	static std::unordered_map<string, string> cache;
+
+	auto it = cache.find(type);
+
+	if( it != cache.end() ) return it->second;
+	else {
+		string r = standard_name_raw(type);
+		cache.emplace(type, r);
+		return r;
+	}
+}
+
+
 /// Attempt to simplify std:: name by removing unneded template arguments. Function assume that there is no 'std::' namespaces prefix at the beginning of the argument string
-string simplify_std_class_name(string const &type)
+string simplify_std_class_name_raw(string const &type)
 {
 	static std::map<string, string> const std_typedef_map{
 		{"basic_iostream<char,std::char_traits<char>>", "iostream"},
@@ -585,6 +604,21 @@ string simplify_std_class_name(string const &type)
 	}
 
 	return res;
+}
+
+/// Attempt to simplify std:: name by removing unneded template arguments. Function assume that there is no 'std::' namespaces prefix at the beginning of the argument string
+string simplify_std_class_name(string const &type)
+{
+	static std::unordered_map<string, string> cache;
+
+	auto it = cache.find(type);
+
+	if( it != cache.end() ) return it->second;
+	else {
+		string r = simplify_std_class_name_raw(type);
+		cache.emplace(type, r);
+		return r;
+	}
 }
 
 
