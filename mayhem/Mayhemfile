@@ -1,5 +1,5 @@
 project: binder
-target: binder2
+target: diffbinder
 cmds:
   - cmd: /diffbinder @@ /README.md
 
