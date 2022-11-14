@@ -35,14 +35,10 @@ COPY . /binder
 
 # Build
 WORKDIR "/build"
-RUN cmake \
-	-DCMAKE_CXX_COMPILER="$(which clang++-"${CLANG_VERSION}")" \
-	-DBINDER_ENABLE_TEST=OFF \
-	/binder
-RUN make "-j$(nproc)"
-RUN make install
+RUN clang++-${CLANG_VERSION} /binder/test/diffbinder.cpp -o /diffbinder
 
 
 # Install image
 FROM base as install
-COPY --from=build /usr/local/bin/binder /usr/local/bin/binder
+COPY --from=build /diffbinder /diffbinder
+COPY --from=build /binder/README.md /README.md
